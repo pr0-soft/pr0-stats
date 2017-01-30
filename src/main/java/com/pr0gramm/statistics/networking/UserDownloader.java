@@ -28,6 +28,9 @@ public class UserDownloader {
     private UserDownloaderCallback callback;
     private int limit;
 
+    private int enqueuedRequests = 0;
+    private int finishedRequests = 0;
+
     public UserDownloader(ArrayList<String> userNames) {
         this(userNames, null, -1);
     }
@@ -40,6 +43,8 @@ public class UserDownloader {
         this.userNames = new LinkedList<String>(userNames);
         this.callback = callback;
         this.limit = limit;
+
+        this.enqueuedRequests = this.userNames.size();
     }
 
     public void startDownloading() throws UnsupportedOperationException {
@@ -59,9 +64,15 @@ public class UserDownloader {
         String name = userNames.poll();
 
         if (name == null) {
+            return;
+        }
+
+        /*
+        if (name == null) {
             finishDownloader();
             return;
         }
+        */
 
         final String url = "https://pr0gramm.com/api/profile/info?name=" + name;
         requestBuilder.url(url);
@@ -71,9 +82,21 @@ public class UserDownloader {
         Request request = requestBuilder.build();
 
         newCall(request);
+
+        new java.util.Timer().schedule(
+            new java.util.TimerTask() {
+                @Override
+                public void run() {
+                    downloadNextUser();
+                }
+            },
+            20
+        );
     }
 
     private void newCall(final Request request) {
+        // enqueuedRequests++;
+
         client.newCall(request).enqueue(new Callback() {
 
             @Override
@@ -91,12 +114,27 @@ public class UserDownloader {
                     Main.getLogger().log(Level.WARNING, "******* NON 200 STATUS CODE *******");
                     Main.getLogger().log(Level.WARNING, request.url().toString());
                     Main.getLogger().log(Level.WARNING, response.body().string());
-                    downloadNextUser();
+
+                    addFinishedRequest();
+                    finishIfFinished();
                 } else {
+                    addFinishedRequest();
+
                     parseResponse(response.body().string());
+                    finishIfFinished();
                 }
             }
         });
+    }
+
+    private synchronized void addFinishedRequest() {
+        finishedRequests++;
+    }
+
+    private synchronized void finishIfFinished() {
+        if (finishedRequests >= enqueuedRequests) {
+            finishDownloader();
+        }
     }
 
     private synchronized void parseResponse(String response) {
@@ -106,13 +144,6 @@ public class UserDownloader {
             users.add(user);
             Main.getLogger().log(Level.INFO, "NEXT USER DOWNLOADED: " + user.getUser().getName());
         }
-
-        if (limit > 0 && users.size() >= limit) {
-            finishDownloader();
-            return;
-        }
-
-        downloadNextUser();
     }
 
     private synchronized void finishDownloader() {
