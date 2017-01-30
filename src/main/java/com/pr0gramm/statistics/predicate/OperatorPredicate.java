@@ -6,6 +6,8 @@ import java.lang.reflect.Field;
 import java.math.BigDecimal;
 
 /**
+ * A predicate which combines two verbs with an operator.
+ * <p>
  * Created by koray on 29/01/2017.
  */
 public class OperatorPredicate<T> implements ParsablePredicate<T> {
@@ -36,7 +38,7 @@ public class OperatorPredicate<T> implements ParsablePredicate<T> {
         operatorType = OperatorType.fromString(verbs[1]);
         value = verbs[2];
 
-        type.getDeclaredField(fieldName);
+        getField(fieldName);
 
         predicateParsed = true;
     }
@@ -47,20 +49,10 @@ public class OperatorPredicate<T> implements ParsablePredicate<T> {
             throw new UnsupportedOperationException("parsePredicate must be called before calling satisfiesPredicate!");
         }
 
-        Field field;
-        try {
-            field = type.getDeclaredField(fieldName);
-        } catch (NoSuchFieldException e) {
-            // This will *never* happen. We are testing this already in parsePredicate...
-            throw new RuntimeException("This should not happen. Something went totally wrong.");
-        }
-
-        field.setAccessible(true);
-
         Object actualValue;
         try {
-            actualValue = field.get(obj);
-        } catch (IllegalAccessException e) {
+            actualValue = getObject(fieldName, obj);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
             // This will never happen because we are setting the field to accessible above...
             throw new RuntimeException("This should not happen. Something went totally wrong.");
         }
@@ -113,5 +105,46 @@ public class OperatorPredicate<T> implements ParsablePredicate<T> {
         }
 
         return true;
+    }
+
+    private Field getField(String name) throws NoSuchFieldException {
+        if (name.contains(".")) {
+            String[] splittedFields = name.split("\\.");
+            Field f = null;
+            for (String s : splittedFields) {
+                if (f == null) {
+                    f = type.getDeclaredField(s);
+                } else {
+                    f = f.getType().getDeclaredField(s);
+                }
+            }
+            return f;
+        } else {
+            return type.getDeclaredField(name);
+        }
+    }
+
+    private Object getObject(String name, Object topLevelObj) throws IllegalAccessException, NoSuchFieldException {
+        if (name.contains(".")) {
+            String[] splittedFields = name.split("\\.");
+            Object o = topLevelObj;
+            Field f = null;
+            for (String s : splittedFields) {
+                if (f == null) {
+                    f = type.getDeclaredField(s);
+                    f.setAccessible(true);
+                    o = f.get(o);
+                } else {
+                    f = f.getType().getDeclaredField(s);
+                    f.setAccessible(true);
+                    o = f.get(o);
+                }
+            }
+            return o;
+        } else {
+            Field f = type.getDeclaredField(name);
+            f.setAccessible(true);
+            return f.get(topLevelObj);
+        }
     }
 }

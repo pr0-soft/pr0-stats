@@ -8,10 +8,6 @@ import com.pr0gramm.statistics.networking.PostDownloader;
 import com.pr0gramm.statistics.networking.PostDownloaderCallback;
 import com.pr0gramm.statistics.networking.UserDownloader;
 import com.pr0gramm.statistics.networking.UserDownloaderCallback;
-import com.pr0gramm.statistics.predicate.ConditionalPredicateCombination;
-import com.pr0gramm.statistics.predicate.GeneralPredicate;
-import com.pr0gramm.statistics.predicate.OperatorPredicate;
-import com.pr0gramm.statistics.toolbox.OperatorType;
 import com.pr0gramm.statistics.toolbox.SimpleConsoleFormatter;
 import com.pr0gramm.statistics.toolbox.StatsType;
 
@@ -41,6 +37,8 @@ public class Main {
     private static ArrayList<String> userNames = new ArrayList<String>();
 
     private static ArrayList<User> users = new ArrayList<User>();
+
+    private static boolean executingCommandRightNow = false;
 
     public static void main(String[] args) {
         setupLogger();
@@ -74,6 +72,14 @@ public class Main {
             scanner.useDelimiter(Pattern.compile("[\r\n]+"));
 
             while (scanner.hasNext()) {
+                if (executingCommandRightNow) {
+                    // Remove the next element from scanner to prevent infinite loop
+                    scanner.next();
+                    logger.log(Level.WARNING, "A command is currently being executed. Please try again later.");
+                    continue;
+                }
+                executingCommandRightNow = true;
+
                 String str = scanner.next().trim();
 
                 String[] splitted = str.split("\\s+");
@@ -90,6 +96,8 @@ public class Main {
                         continue;
                     }
                     readItems(splitted[1]);
+
+                    executingCommandRightNow = false;
                     break;
                 case "readusers":
                     if (splitted.length != 2) {
@@ -97,6 +105,8 @@ public class Main {
                         continue;
                     }
                     readUsers(splitted[1]);
+
+                    executingCommandRightNow = false;
                     break;
                 case "downloaditems":
                     if (splitted.length != 2) {
@@ -108,7 +118,12 @@ public class Main {
                         logger.log(Level.WARNING, "Please type in a path to a file which does not exist yet.");
                         continue;
                     }
-                    downloadItems(splitted[1]);
+                    downloadItems(splitted[1], new Runnable() {
+                        @Override
+                        public void run() {
+                            executingCommandRightNow = false;
+                        }
+                    });
                     break;
                 case "downloadusers":
                     if (splitted.length != 2) {
@@ -126,7 +141,12 @@ public class Main {
                             + "or 'downloaditems <outputPath>' to download all items!");
                         continue;
                     }
-                    downloadUsers(splitted[1]);
+                    downloadUsers(splitted[1], new Runnable() {
+                        @Override
+                        public void run() {
+                            executingCommandRightNow = false;
+                        }
+                    });
                     break;
                 case "stats":
                     if (splitted.length < 3) {
@@ -149,9 +169,12 @@ public class Main {
                     String[] predicate = Arrays.copyOfRange(splitted, 2, splitted.length);
 
                     parseStats(type, predicate);
+
+                    executingCommandRightNow = false;
                     break;
                 default:
                     warnUsage();
+                    executingCommandRightNow = false;
                     continue;
                 }
             }
@@ -161,7 +184,7 @@ public class Main {
         }
     }
 
-    private static void downloadItems(final String fileName) {
+    private static void downloadItems(final String fileName, final Runnable completion) {
         final long initialTime = System.currentTimeMillis();
 
         PostDownloader downloader = new PostDownloader(new PostDownloaderCallback() {
@@ -191,6 +214,8 @@ public class Main {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+                completion.run();
             }
         });
         downloader.startDownloading();
@@ -283,7 +308,7 @@ public class Main {
         }
     }
 
-    private static void downloadUsers(final String fileName) {
+    private static void downloadUsers(final String fileName, final Runnable completion) {
         final long initialTime = System.currentTimeMillis();
 
         UserDownloader downloader = new UserDownloader(userNames, new UserDownloaderCallback() {
@@ -312,6 +337,8 @@ public class Main {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+                completion.run();
             }
         });
 
