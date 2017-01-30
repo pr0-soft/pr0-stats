@@ -119,6 +119,7 @@ public class Main {
                         continue;
                     }
                     downloadItems(splitted[1], new Runnable() {
+
                         @Override
                         public void run() {
                             executingCommandRightNow = false;
@@ -142,6 +143,7 @@ public class Main {
                         continue;
                     }
                     downloadUsers(splitted[1], new Runnable() {
+
                         @Override
                         public void run() {
                             executingCommandRightNow = false;
@@ -187,20 +189,82 @@ public class Main {
     private static void downloadItems(final String fileName, final Runnable completion) {
         final long initialTime = System.currentTimeMillis();
 
+        int newerThan = -1;
+        if (items.size() > 0) {
+            Collections.sort(items, new Comparator<Item>() {
+
+                @Override
+                public int compare(Item o1, Item o2) {
+                    if (o1 == null && o2 == null) {
+                        return 0;
+                    } else if (o1 == null) {
+                        return 1;
+                    } else if (o2 == null) {
+                        return -1;
+                    }
+
+                    if (o1.getId() > o2.getId()) {
+                        return 1;
+                    }
+                    if (o1.getId() < o2.getId()) {
+                        return -1;
+                    }
+
+                    return 0;
+                }
+            });
+            newerThan = items.get(items.size() - 1).getId();
+        }
+
         PostDownloader downloader = new PostDownloader(new PostDownloaderCallback() {
 
             @Override
             public void finishedLoading(ArrayList<Item> items, ArrayList<String> userNames) {
                 System.out.println("******* WE ARE REALLY FINISHED!!! *******");
-                System.out.println("FINAL ITEM SIZE: " + items.size());
+                System.out.println("NEW DOWNLOADED ITEM SIZE: " + items.size());
+                System.out.println("TOTAL ITEM SIZE: " + (items.size() + Main.items.size()));
                 System.out.println("FINAL USER SIZE: " + userNames.size());
 
                 System.out.println("TIME: " + (System.currentTimeMillis() - initialTime) + " millis");
 
+                System.out.println("WRITING ITEMS TO FILE " + fileName);
+
+                Main.items.addAll(items);
+                // FILTER ITEMS BY ID
+                HashMap<Long, Item> ids = new HashMap<Long, Item>();
+                for (Item i : Main.items) {
+                    if (!ids.containsKey((long) i.getId())) {
+                        ids.put((long) i.getId(), i);
+                    }
+                }
+                Main.items = new ArrayList<Item>(ids.values());
+                // END FILTERING
+
+                // ******* Get unique usernames *******
+                HashMap<String, Item> names = new HashMap<String, Item>();
+                for (Item i : Main.items) {
+                    if (i.getUser() != null && !names.containsKey(i.getUser())) {
+                        names.put(i.getUser(), i);
+                    }
+                }
+                for (String s : names.keySet()) {
+                    if (!Main.userNames.contains(s)) {
+                        Main.userNames.add(s);
+                    }
+                }
+                // ******* End Get unique usernames *******
+
+                // DELETE FILE IF IT EXISTS, BUT IT SHOULD NOT EXIST BECAUSE WE ARE CHECKING THIS BEFORE STARTING
+                // DOWNLOAD ITEMS!!!
+                File file = new File(fileName);
+                if (file.exists()) {
+                    file.delete();
+                }
+
                 ObjectOutputStream oos = null;
                 try {
                     oos = new ObjectOutputStream(new FileOutputStream(fileName));
-                    oos.writeObject(items);
+                    oos.writeObject(Main.items);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -217,7 +281,7 @@ public class Main {
 
                 completion.run();
             }
-        });
+        }, newerThan);
         downloader.startDownloading();
     }
 
@@ -311,19 +375,53 @@ public class Main {
     private static void downloadUsers(final String fileName, final Runnable completion) {
         final long initialTime = System.currentTimeMillis();
 
-        UserDownloader downloader = new UserDownloader(userNames, new UserDownloaderCallback() {
+        ArrayList<String> namesToDownload = new ArrayList<String>(userNames);
+        if (users.size() > 0) {
+            for (User u : users) {
+                if (namesToDownload.contains(u.getUser().getName())) {
+                    namesToDownload.remove(u.getUser().getName());
+                }
+            }
+            System.out.println("DOWNLOADING " + namesToDownload.size() + " new users!");
+        }
+
+        UserDownloader downloader = new UserDownloader(namesToDownload, new UserDownloaderCallback() {
 
             @Override
             public void finishedLoading(ArrayList<User> users) {
                 System.out.println("******* WE ARE REALLY FINISHED!!! *******");
-                System.out.println("FINAL DOWNLOADED USER SIZE: " + users.size());
+                System.out.println("FINAL NEWLY DOWNLOADED USERS SIZE: " + users.size());
+                System.out.println("TOTAL USERS SIZE: " + (Main.users.size() + users.size()));
 
                 System.out.println("TIME: " + (System.currentTimeMillis() - initialTime) + " millis");
+
+                System.out.println("WRITING USERS TO FILE " + fileName);
+
+                Main.users.addAll(users);
+
+                // ******* Get unique users *******
+                HashMap<String, User> uniqueUsers = new HashMap<String, User>();
+                for (User u : Main.users) {
+                    if (u.getUser() != null && u.getUser().getName() != null && !uniqueUsers
+                        .containsKey(u.getUser().getName())) {
+                        uniqueUsers.put(u.getUser().getName(), u);
+                    }
+                }
+
+                Main.users = new ArrayList<User>(uniqueUsers.values());
+                // ******* End Get unique usernames *******
+
+                // DELETE FILE IF IT EXISTS, BUT IT SHOULD NOT EXIST BECAUSE WE ARE CHECKING THIS BEFORE STARTING
+                // DOWNLOAD ITEMS!!!
+                File file = new File(fileName);
+                if (file.exists()) {
+                    file.delete();
+                }
 
                 ObjectOutputStream oos = null;
                 try {
                     oos = new ObjectOutputStream(new FileOutputStream(fileName));
-                    oos.writeObject(users);
+                    oos.writeObject(Main.users);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

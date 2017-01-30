@@ -25,8 +25,10 @@ public class PostDownloader {
     private Gson gson = new Gson();
 
     private PostDownloaderCallback callback;
-    private int limit;
-    private int olderThan;
+    private int limit = -1;
+    private int olderThan = -1;
+
+    private int newerThan = -1;
 
     public PostDownloader() {
         this(null, -1, -1);
@@ -42,6 +44,11 @@ public class PostDownloader {
         this.olderThan = olderThan;
     }
 
+    public PostDownloader(PostDownloaderCallback callback, int newerThan) {
+        this.callback = callback;
+        this.newerThan = newerThan;
+    }
+
     public void startDownloading() throws UnsupportedOperationException {
         if (started || finished) {
             throw new UnsupportedOperationException("You can't start the downloader twice!");
@@ -50,6 +57,10 @@ public class PostDownloader {
 
         if (olderThan > 0) {
             downloadNextStack(Integer.toString(olderThan));
+            return;
+        }
+        if (newerThan > 0) {
+            downloadNewerStack(Integer.toString(newerThan));
             return;
         }
 
@@ -69,6 +80,19 @@ public class PostDownloader {
         Request.Builder requestBuilder = new Request.Builder();
 
         final String url = "https://pr0gramm.com/api/items/get?flags=7&older=" + lastId;
+        requestBuilder.url(url);
+
+        requestBuilder.get();
+
+        Request request = requestBuilder.build();
+
+        newCall(request);
+    }
+
+    private void downloadNewerStack(String newerThan) {
+        Request.Builder requestBuilder = new Request.Builder();
+
+        final String url = "https://pr0gramm.com/api/items/get?flags=7&newer=" + newerThan;
         requestBuilder.url(url);
 
         requestBuilder.get();
@@ -121,7 +145,7 @@ public class PostDownloader {
             items.addAll(Arrays.asList(newItems));
         }
 
-        if (newItems != null && newItems.length > 0 && !result.isAtEnd()) {
+        if (newItems != null && newItems.length > 0 && (newerThan > 0 ? !result.isAtStart() : !result.isAtEnd())) {
             Item lastItem = newItems[newItems.length - 1];
 
             int lastId = lastItem.getId();
@@ -135,7 +159,12 @@ public class PostDownloader {
             System.out.println("CURRENT ITEM SIZE: " + items.size());
             System.out.println("CURRENT USER SIZE: " + userNames.size());
 
-            downloadNextStack(Integer.toString(lastId));
+            if (newerThan > 0) {
+                // We are downloading into the opposite direction
+                downloadNewerStack(Integer.toString(lastId));
+            } else {
+                downloadNextStack(Integer.toString(lastId));
+            }
         } else {
             finishDownloader();
         }
@@ -154,5 +183,13 @@ public class PostDownloader {
 
     public boolean isFinished() {
         return finished;
+    }
+
+    public int getLimit() {
+        return limit;
+    }
+
+    public void setLimit(int limit) {
+        this.limit = limit;
     }
 }
