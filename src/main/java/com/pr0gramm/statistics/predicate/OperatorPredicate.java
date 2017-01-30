@@ -1,5 +1,7 @@
 package com.pr0gramm.statistics.predicate;
 
+import com.pr0gramm.statistics.helper.DecimalHelper;
+import com.pr0gramm.statistics.helper.ReflectionHelper;
 import com.pr0gramm.statistics.toolbox.OperatorType;
 
 import java.lang.reflect.Field;
@@ -38,6 +40,11 @@ public class OperatorPredicate<T> implements ParsablePredicate<T> {
         operatorType = OperatorType.fromString(verbs[1]);
         value = verbs[2];
 
+        if (operatorType == null) {
+            throw new UnsupportedOperationException("The operator " + verbs[1]
+                + " is not supported. Please use one of the following: ==, !=, >, <, >=, <=");
+        }
+
         getField(fieldName);
 
         predicateParsed = true;
@@ -51,7 +58,7 @@ public class OperatorPredicate<T> implements ParsablePredicate<T> {
 
         Object actualValue;
         try {
-            actualValue = getObject(fieldName, obj);
+            actualValue = ReflectionHelper.getObject(fieldName, obj, type);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             // This will never happen because we are setting the field to accessible above...
             throw new RuntimeException("This should not happen. Something went totally wrong.");
@@ -68,22 +75,22 @@ public class OperatorPredicate<T> implements ParsablePredicate<T> {
         case NOT_EQUAL:
             return !actualValue.toString().equals(value);
         case GREATER:
-            if (isDecimal(actualValue.toString()) && isDecimal(value)) {
+            if (DecimalHelper.isDecimal(actualValue.toString()) && DecimalHelper.isDecimal(value)) {
                 return (new BigDecimal(actualValue.toString())).compareTo(new BigDecimal(value)) > 0;
             }
             return actualValue.toString().compareTo(value) > 0;
         case LESS:
-            if (isDecimal(actualValue.toString()) && isDecimal(value)) {
+            if (DecimalHelper.isDecimal(actualValue.toString()) && DecimalHelper.isDecimal(value)) {
                 return (new BigDecimal(actualValue.toString())).compareTo(new BigDecimal(value)) < 0;
             }
             return actualValue.toString().compareTo(value) < 0;
         case GREATER_OR_EQUAL:
-            if (isDecimal(actualValue.toString()) && isDecimal(value)) {
+            if (DecimalHelper.isDecimal(actualValue.toString()) && DecimalHelper.isDecimal(value)) {
                 return (new BigDecimal(actualValue.toString())).compareTo(new BigDecimal(value)) >= 0;
             }
             return actualValue.toString().compareTo(value) >= 0;
         case LESS_OR_EQUAL:
-            if (isDecimal(actualValue.toString()) && isDecimal(value)) {
+            if (DecimalHelper.isDecimal(actualValue.toString()) && DecimalHelper.isDecimal(value)) {
                 return (new BigDecimal(actualValue.toString())).compareTo(new BigDecimal(value)) <= 0;
             }
             return actualValue.toString().compareTo(value) <= 0;
@@ -95,16 +102,6 @@ public class OperatorPredicate<T> implements ParsablePredicate<T> {
     @Override
     public String toString() {
         return fieldName + " " + operatorType.toString() + " " + value;
-    }
-
-    private boolean isDecimal(String s) {
-        try {
-            new BigDecimal(s);
-        } catch (NumberFormatException e) {
-            return false;
-        }
-
-        return true;
     }
 
     private Field getField(String name) throws NoSuchFieldException {
@@ -121,30 +118,6 @@ public class OperatorPredicate<T> implements ParsablePredicate<T> {
             return f;
         } else {
             return type.getDeclaredField(name);
-        }
-    }
-
-    private Object getObject(String name, Object topLevelObj) throws IllegalAccessException, NoSuchFieldException {
-        if (name.contains(".")) {
-            String[] splittedFields = name.split("\\.");
-            Object o = topLevelObj;
-            Field f = null;
-            for (String s : splittedFields) {
-                if (f == null) {
-                    f = type.getDeclaredField(s);
-                    f.setAccessible(true);
-                    o = f.get(o);
-                } else {
-                    f = f.getType().getDeclaredField(s);
-                    f.setAccessible(true);
-                    o = f.get(o);
-                }
-            }
-            return o;
-        } else {
-            Field f = type.getDeclaredField(name);
-            f.setAccessible(true);
-            return f.get(topLevelObj);
         }
     }
 }

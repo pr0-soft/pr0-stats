@@ -3,6 +3,8 @@ package com.pr0gramm.statistics;
 import com.google.gson.Gson;
 import com.pr0gramm.statistics.api.Item;
 import com.pr0gramm.statistics.api.User;
+import com.pr0gramm.statistics.api.UserInfo;
+import com.pr0gramm.statistics.helper.AbsoluteStatisticsHelper;
 import com.pr0gramm.statistics.helper.StatisticsHelper;
 import com.pr0gramm.statistics.networking.PostDownloader;
 import com.pr0gramm.statistics.networking.PostDownloaderCallback;
@@ -163,6 +165,14 @@ public class Main {
                         type = StatsType.ITEMS;
                     } else if (splitted[1].equalsIgnoreCase("userinfo")) {
                         type = StatsType.USER_INFO;
+                    } else if (splitted[1].equalsIgnoreCase("absolute")) {
+                        parseAbsoluteStats(Arrays.copyOfRange(splitted, 2, splitted.length), false);
+                        executingCommandRightNow = false;
+                        continue;
+                    } else if (splitted[1].equalsIgnoreCase("average")) {
+                        parseAbsoluteStats(Arrays.copyOfRange(splitted, 2, splitted.length), true);
+                        executingCommandRightNow = false;
+                        continue;
                     } else {
                         warnUsage();
                         continue;
@@ -457,10 +467,60 @@ public class Main {
         }
     }
 
+    private static void parseAbsoluteStats(String[] options, boolean average) {
+        if (options.length != 2) {
+            warnUsage();
+            return;
+        }
+
+        switch (options[0].toLowerCase()) {
+        case "items":
+            if (items.size() < 1) {
+                warnNoItems();
+                return;
+            }
+            AbsoluteStatisticsHelper.parseAbsoluteStatistics(items, options[1], Item.class, average);
+            break;
+        case "users":
+            if (users.size() < 1) {
+                warnNoUsers();
+                return;
+            }
+            AbsoluteStatisticsHelper.parseAbsoluteStatistics(users, options[1], User.class, average);
+            break;
+        case "userinfo":
+            if (users.size() < 1) {
+                warnNoUsers();
+                return;
+            }
+            ArrayList<UserInfo> userInfos = new ArrayList<UserInfo>();
+            for (User u : users) {
+                if (u.getUser() != null) {
+                    userInfos.add(u.getUser());
+                }
+            }
+            AbsoluteStatisticsHelper.parseAbsoluteStatistics(userInfos, options[1], UserInfo.class, average);
+            break;
+        }
+    }
+
     private static void warnUsage() {
         logger.log(Level.WARNING,
             "\nUsage:\n" + "    readitems <path>\n" + "    readusers <path>\n" + "    downloaditems <outputPath>\n"
-                + "    downloadusers <outputPath>\n" + "    stats (items | users | userinfo) <predicate>\n");
+                + "    downloadusers <outputPath>\n" + "    stats (items | users | userinfo) <predicate>\n"
+                + "    stats (absolute | average) (items | users | userinfo) <memberName>");
+    }
+
+    private static void warnNoItems() {
+        logger.log(Level.WARNING, "There are no cached items to generate stats!");
+        logger.log(Level.WARNING, "Please use 'readitems <path>' to read items from the disk "
+            + "or 'downloaditems <outputPath>' to download all items!");
+    }
+
+    private static void warnNoUsers() {
+        logger.log(Level.WARNING, "There are no cached users to generate stats.");
+        logger.log(Level.WARNING, "Please use 'readusers <path>' to read users from the disk "
+            + "or 'downloadusers <outputPath>' to download all users!");
     }
 
     public static Logger getLogger() {
