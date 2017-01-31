@@ -9,9 +9,12 @@ import com.pr0gramm.statistics.predicate.ConditionalPredicateCombination;
 import com.pr0gramm.statistics.predicate.GeneralPredicate;
 import com.pr0gramm.statistics.predicate.OperatorPredicate;
 import com.pr0gramm.statistics.toolbox.ConditionalOperatorType;
+import com.pr0gramm.statistics.toolbox.SortOption;
+import com.pr0gramm.statistics.toolbox.SortType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.logging.Level;
 
@@ -29,7 +32,9 @@ public class StatisticsHelper {
                 + "or 'downloaditems <outputPath>' to download all items!");
             return;
         }
-        ArrayList<GeneralPredicate<Item>> itemPredicates = generatePredicates(predicate, Item.class);
+        SortOption sortOption = filterPredicates(predicate);
+
+        ArrayList<GeneralPredicate<Item>> itemPredicates = generatePredicates(sortOption.getPredicate(), Item.class);
         if (itemPredicates == null) {
             Main.getLogger().log(Level.WARNING, "Statistics could not be generated!");
             return;
@@ -39,6 +44,23 @@ public class StatisticsHelper {
         itemGenerator.generate();
         Main.getLogger().info("There are " + itemGenerator.getStatisticsList().size() + " out of " + items.size()
             + " items which satisfy all given predicates!");
+
+        Main.getLogger().info("------- Showing the top " + sortOption.getTop() + " items -------");
+        Main.getLogger().info("--- Sorted by field " + sortOption.getField() + "\n\n");
+
+        ArrayList<Item> sorted = itemGenerator.sort(sortOption);
+
+        if (sortOption.getSortType() == SortType.DESCENDING) {
+            for (int i = sorted.size() - 1; i > sorted.size() - 1 - sortOption.getTop(); i--) {
+                logPlacing(i + 1, sorted.get(i));
+            }
+        } else {
+            for (int i = 0; i < sortOption.getTop(); i++) {
+                if (sorted.size() > i) {
+                    logPlacing(i + 1, sorted.get(i));
+                }
+            }
+        }
     }
 
     public static void parseUsersStatsRequest(ArrayList<User> users, String[] predicate) {
@@ -48,7 +70,9 @@ public class StatisticsHelper {
                 + "or 'downloadusers <outputPath>' to download all users!");
             return;
         }
-        ArrayList<GeneralPredicate<User>> userPredicates = generatePredicates(predicate, User.class);
+        SortOption sortOption = filterPredicates(predicate);
+
+        ArrayList<GeneralPredicate<User>> userPredicates = generatePredicates(sortOption.getPredicate(), User.class);
         if (userPredicates == null) {
             Main.getLogger().log(Level.WARNING, "Statistics could not be generated!");
             return;
@@ -67,6 +91,7 @@ public class StatisticsHelper {
                 + "or 'downloadusers <outputPath>' to download all users!");
             return;
         }
+        SortOption sortOption = filterPredicates(predicate);
 
         // Get user info elements
         ArrayList<UserInfo> userInfos = new ArrayList<UserInfo>();
@@ -76,7 +101,8 @@ public class StatisticsHelper {
             }
         }
 
-        ArrayList<GeneralPredicate<UserInfo>> userInfoPredicates = generatePredicates(predicate, UserInfo.class);
+        ArrayList<GeneralPredicate<UserInfo>> userInfoPredicates = generatePredicates(sortOption.getPredicate(),
+            UserInfo.class);
         if (userInfoPredicates == null) {
             Main.getLogger().log(Level.WARNING, "Statistics could not be generated!");
             return;
@@ -158,9 +184,57 @@ public class StatisticsHelper {
         return predicates;
     }
 
+    private static SortOption filterPredicates(String[] predicate) {
+        int top = 5;
+        String sortField = "id";
+        SortType sortType = SortType.ASCENDING;
+
+        ArrayList<String> predicateList = new ArrayList<String>(Arrays.asList(predicate));
+        Iterator<String> predicateIterator = predicateList.iterator();
+
+        while (predicateIterator.hasNext()) {
+            String s = predicateIterator.next();
+            if (s == null) {
+                continue;
+            }
+
+            if (s.startsWith("--top=")) {
+                String number = s.replace("--top=", "");
+                if (DecimalHelper.isInt(number)) {
+                    top = Integer.parseInt(number);
+                }
+                predicateIterator.remove();
+            } else if (s.startsWith("--sort_type=")) {
+                SortType sort = SortType.fromString(s.replace("--sort_type=", ""));
+                if (sort != null) {
+                    sortType = sort;
+                }
+                predicateIterator.remove();
+            } else if (s.startsWith("--sort_field=")) {
+                sortField = s.replace("--sort_field=", "");
+                predicateIterator.remove();
+            }
+        }
+
+        String[] filteredPredicates = new String[predicateList.size()];
+        filteredPredicates = predicateList.toArray(filteredPredicates);
+
+        SortOption sortOption = new SortOption(sortType, sortField, top, filteredPredicates);
+
+        return sortOption;
+    }
+
     private static void warnPredicate() {
         Main.getLogger().log(Level.WARNING,
             "Predicates must follow the following rule: " + "<memberName> (== | != | > | < | >= | <=) <value>"
                 + "\nand can be combined with && or ||");
+    }
+
+    private static void logPlacing(int number, Object object) {
+        String info = "";
+        info = info + "Number " + number + ":\n";
+        info = info + object.toString();
+        info = info.replace("\n", "\n    ");
+        Main.getLogger().info(info);
     }
 }

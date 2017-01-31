@@ -5,12 +5,14 @@ import com.pr0gramm.statistics.api.Item;
 import com.pr0gramm.statistics.api.User;
 import com.pr0gramm.statistics.api.UserInfo;
 import com.pr0gramm.statistics.helper.AbsoluteStatisticsHelper;
+import com.pr0gramm.statistics.helper.DecimalHelper;
 import com.pr0gramm.statistics.helper.StatisticsHelper;
 import com.pr0gramm.statistics.networking.PostDownloader;
 import com.pr0gramm.statistics.networking.PostDownloaderCallback;
 import com.pr0gramm.statistics.networking.UserDownloader;
 import com.pr0gramm.statistics.networking.UserDownloaderCallback;
 import com.pr0gramm.statistics.toolbox.SimpleConsoleFormatter;
+import com.pr0gramm.statistics.toolbox.SortType;
 import com.pr0gramm.statistics.toolbox.StatsType;
 
 import java.io.*;
@@ -328,7 +330,7 @@ public class Main {
             userNames = new ArrayList<String>(names.keySet());
 
             logger.log(Level.INFO, "Finished parsing users");
-            logger.log(Level.INFO, "There are now " + userNames.size() + " users in the list!");
+            logger.log(Level.INFO, "There are now " + userNames.size() + " usernames in the list!");
         } catch (IOException | ClassNotFoundException | ClassCastException e) {
             e.printStackTrace();
         }
@@ -350,7 +352,7 @@ public class Main {
             ArrayList<User> userList = (ArrayList<User>) ois.readObject();
             users.addAll(userList);
             logger.log(Level.INFO, "Finished reading users from " + path);
-            logger.log(Level.INFO, "There are now " + users.size() + " items in the list!");
+            logger.log(Level.INFO, "There are now " + users.size() + " users in the list!");
 
             logger.log(Level.INFO, "******* Filtering users *******");
 
@@ -505,10 +507,25 @@ public class Main {
     }
 
     private static void warnUsage() {
-        logger.log(Level.WARNING,
-            "\nUsage:\n" + "    readitems <path>\n" + "    readusers <path>\n" + "    downloaditems <outputPath>\n"
-                + "    downloadusers <outputPath>\n" + "    stats (items | users | userinfo) <predicate>\n"
-                + "    stats (absolute | average) (items | users | userinfo) <memberName>");
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("\nUsage:\n");
+        builder.append("    readitems <path>\n");
+        builder.append("    readusers <path>\n");
+        builder.append("    downloaditems <outputPath>\n");
+        builder.append("    downloadusers <outputPath>\n");
+        builder.append("    stats (items | users | userinfo) <predicate> "
+            + "[--sort_type=(acs | desc)] [--sort_field=<field>] [--top=<number>]\n");
+        builder.append("    stats (absolute | average) (items | users | userinfo) <memberName>\n");
+
+        builder.append("\n");
+
+        builder.append("Options:\n");
+        builder.append("    --sort_type=(asc | desc)  Sort ascending or descending [default: asc].\n");
+        builder.append("    --sort_field=<field>      The field to base the sorting on [default: id].\n");
+        builder.append("    --top=<number>            The number of elements which should be printed [default: 5].\n");
+
+        logger.log(Level.WARNING, builder.toString());
     }
 
     private static void warnNoItems() {

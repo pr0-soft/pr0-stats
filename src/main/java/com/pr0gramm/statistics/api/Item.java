@@ -7,6 +7,8 @@ import java.io.Serializable;
  */
 public class Item implements Serializable {
 
+    private static final long serialVersionUID = -1857326501191336628L;
+
     private int id;
     private int promoted;
     private int up;
@@ -117,5 +119,26 @@ public class Item implements Serializable {
         }
 
         return false;
+    }
+
+    @Override
+    public String toString() {
+        String info = "";
+        info = info + "id: " + getId() + "\n";
+        info = info + "promoted: " + getPromoted() + "\n";
+        info = info + "up: " + getUp() + "\n";
+        info = info + "down: " + getDown() + "\n";
+        info = info + "created: " + getCreated() + "\n";
+        info = info + "image: " + getImage() + "\n";
+        info = info + "thumb: " + getThumb() + "\n";
+        info = info + "fullsize: " + getFullsize() + "\n";
+        info = info + "width: " + getWidth() + "\n";
+        info = info + "height: " + getHeight() + "\n";
+        info = info + "audio: " + isAudio() + "\n";
+        info = info + "source: " + getSource() + "\n";
+        info = info + "flags: " + getFlags() + "\n";
+        info = info + "user: " + getUser() + "\n";
+
+        return info;
     }
 }

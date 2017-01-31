@@ -16,4 +16,14 @@ public class DecimalHelper {
 
         return true;
     }
+
+    public static boolean isInt(String s) {
+        try {
+            int i = Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        return true;
+    }
 }
