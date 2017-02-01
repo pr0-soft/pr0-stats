@@ -7,6 +7,8 @@ import java.io.Serializable;
  */
 public class UserInfo implements Serializable {
 
+    private static final long serialVersionUID = 2353122911683251968L;
+
     private int id;
     private String name;
     private long registered;
@@ -51,5 +53,19 @@ public class UserInfo implements Serializable {
 
     public int getBanned() {
         return banned;
+    }
+
+    @Override
+    public String toString() {
+        String info = "";
+        info = info + "id: " + id + "\n";
+        info = info + "name: " + name + "\n";
+        info = info + "registered: " + registered + "\n";
+        info = info + "score: " + score + "\n";
+        info = info + "mark: " + mark + "\n";
+        info = info + "admin: " + admin + "\n";
+        info = info + "banned: " + banned + "\n";
+
+        return info;
     }
 }

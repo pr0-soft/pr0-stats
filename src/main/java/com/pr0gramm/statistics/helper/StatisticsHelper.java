@@ -70,6 +70,16 @@ public class StatisticsHelper {
                 + "or 'downloadusers <outputPath>' to download all users!");
             return;
         }
+        // Default field is user.id for users
+        for (int i = 0; i < predicate.length; i++) {
+            String fieldKey = "--sort_field=";
+            if (predicate[i].startsWith(fieldKey)) {
+                String fieldName = predicate[i].replace(fieldKey, "");
+                if (fieldName.equals("id")) {
+                    predicate[i] = fieldKey + "user.id";
+                }
+            }
+        }
         SortOption sortOption = filterPredicates(predicate);
 
         ArrayList<GeneralPredicate<User>> userPredicates = generatePredicates(sortOption.getPredicate(), User.class);
@@ -82,6 +92,23 @@ public class StatisticsHelper {
         userGenerator.generate();
         Main.getLogger().info("There are " + userGenerator.getStatisticsList().size() + " out of " + users.size()
             + " users which satisfy all given predicates!");
+
+        Main.getLogger().info("------- Showing the top " + sortOption.getTop() + " users -------");
+        Main.getLogger().info("--- Sorted by field " + sortOption.getField() + "\n\n");
+
+        ArrayList<User> sorted = userGenerator.sort(sortOption);
+
+        if (sortOption.getSortType() == SortType.DESCENDING) {
+            for (int i = sorted.size() - 1; i > sorted.size() - 1 - sortOption.getTop(); i--) {
+                logPlacing(i + 1, sorted.get(i));
+            }
+        } else {
+            for (int i = 0; i < sortOption.getTop(); i++) {
+                if (sorted.size() > i) {
+                    logPlacing(i + 1, sorted.get(i));
+                }
+            }
+        }
     }
 
     public static void parseUserInfoStatsRequest(ArrayList<User> users, String[] predicate) {
@@ -114,6 +141,23 @@ public class StatisticsHelper {
         Main.getLogger().info(
             "There are " + userInfoGenerator.getStatisticsList().size() + " out of " + userInfos.size()
                 + " user info elements which satisfy all given predicates!");
+
+        Main.getLogger().info("------- Showing the top " + sortOption.getTop() + " userinfo -------");
+        Main.getLogger().info("--- Sorted by field " + sortOption.getField() + "\n\n");
+
+        ArrayList<UserInfo> sorted = userInfoGenerator.sort(sortOption);
+
+        if (sortOption.getSortType() == SortType.DESCENDING) {
+            for (int i = sorted.size() - 1; i > sorted.size() - 1 - sortOption.getTop(); i--) {
+                logPlacing(i + 1, sorted.get(i));
+            }
+        } else {
+            for (int i = 0; i < sortOption.getTop(); i++) {
+                if (sorted.size() > i) {
+                    logPlacing(i + 1, sorted.get(i));
+                }
+            }
+        }
     }
 
     private static <T> ArrayList<GeneralPredicate<T>> generatePredicates(String[] predicate, Class<T> predicateType) {

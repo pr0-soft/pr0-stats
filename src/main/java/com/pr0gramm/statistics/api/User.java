@@ -7,6 +7,8 @@ import java.io.Serializable;
  */
 public class User implements Serializable {
 
+    private static final long serialVersionUID = 3998371916307884402L;
+
     private UserInfo user;
     private int commentCount;
     private int uploadCount;
@@ -52,5 +54,21 @@ public class User implements Serializable {
 
     public int getFollowCount() {
         return followCount;
+    }
+
+    @Override
+    public String toString() {
+        String info = "";
+        info = info + "commentCount: " + commentCount + "\n";
+        info = info + "uploadCount: " + uploadCount + "\n";
+        info = info + "likesArePublic: " + likesArePublic + "\n";
+        info = info + "likeCount: " + likeCount + "\n";
+        info = info + "tagCount: " + tagCount + "\n";
+        info = info + "followCount: " + followCount + "\n";
+
+        info = info + "user: ";
+        info = info + ("\n" + user.toString()).replace("\n", "\n    ");
+
+        return info;
     }
 }
