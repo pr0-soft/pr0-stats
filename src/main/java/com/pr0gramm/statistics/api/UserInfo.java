@@ -56,6 +56,21 @@ public class UserInfo implements Serializable {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+
+        if (obj instanceof UserInfo) {
+            if (id == ((UserInfo) obj).getId()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
     public String toString() {
         String info = "";
         info = info + "id: " + id + "\n";
