@@ -138,6 +138,7 @@ public class Item implements Serializable {
         info = info + "source: " + getSource() + "\n";
         info = info + "flags: " + getFlags() + "\n";
         info = info + "user: " + getUser() + "\n";
+        info = info + "mark: " + getMark() + "\n";
 
         return info;
     }
