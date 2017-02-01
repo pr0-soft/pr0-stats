@@ -238,7 +238,7 @@ public class StatisticsHelper {
     private static <T> void printTop(SortOption sortOption, ArrayList<T> sorted) {
         if (sortOption.getSortType() == SortType.DESCENDING) {
             int minIndex = sorted.size() - 1 - sortOption.getTop();
-            minIndex = minIndex < -1 ? 0 : minIndex;
+            minIndex = minIndex < -1 ? -1 : minIndex;
             for (int i = sorted.size() - 1; i > minIndex; i--) {
                 logPlacing(i + 1, sorted.get(i));
             }
