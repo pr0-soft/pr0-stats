@@ -49,18 +49,7 @@ public class StatisticsHelper {
         Main.getLogger().info("--- Sorted by field " + sortOption.getField() + "\n\n");
 
         ArrayList<Item> sorted = itemGenerator.sort(sortOption);
-
-        if (sortOption.getSortType() == SortType.DESCENDING) {
-            for (int i = sorted.size() - 1; i > sorted.size() - 1 - sortOption.getTop(); i--) {
-                logPlacing(i + 1, sorted.get(i));
-            }
-        } else {
-            for (int i = 0; i < sortOption.getTop(); i++) {
-                if (sorted.size() > i) {
-                    logPlacing(i + 1, sorted.get(i));
-                }
-            }
-        }
+        printTop(sortOption, sorted);
     }
 
     public static void parseUsersStatsRequest(ArrayList<User> users, String[] predicate) {
@@ -91,18 +80,7 @@ public class StatisticsHelper {
         Main.getLogger().info("--- Sorted by field " + sortOption.getField() + "\n\n");
 
         ArrayList<User> sorted = userGenerator.sort(sortOption);
-
-        if (sortOption.getSortType() == SortType.DESCENDING) {
-            for (int i = sorted.size() - 1; i > sorted.size() - 1 - sortOption.getTop(); i--) {
-                logPlacing(i + 1, sorted.get(i));
-            }
-        } else {
-            for (int i = 0; i < sortOption.getTop(); i++) {
-                if (sorted.size() > i) {
-                    logPlacing(i + 1, sorted.get(i));
-                }
-            }
-        }
+        printTop(sortOption, sorted);
     }
 
     public static void parseUserInfoStatsRequest(ArrayList<User> users, String[] predicate) {
@@ -140,18 +118,7 @@ public class StatisticsHelper {
         Main.getLogger().info("--- Sorted by field " + sortOption.getField() + "\n\n");
 
         ArrayList<UserInfo> sorted = userInfoGenerator.sort(sortOption);
-
-        if (sortOption.getSortType() == SortType.DESCENDING) {
-            for (int i = sorted.size() - 1; i > sorted.size() - 1 - sortOption.getTop(); i--) {
-                logPlacing(i + 1, sorted.get(i));
-            }
-        } else {
-            for (int i = 0; i < sortOption.getTop(); i++) {
-                if (sorted.size() > i) {
-                    logPlacing(i + 1, sorted.get(i));
-                }
-            }
-        }
+        printTop(sortOption, sorted);
     }
 
     private static <T> ArrayList<GeneralPredicate<T>> generatePredicates(String[] predicate, Class<T> predicateType) {
@@ -266,6 +233,22 @@ public class StatisticsHelper {
         Main.getLogger().log(Level.WARNING,
             "Predicates must follow the following rule: " + "<memberName> (== | != | > | < | >= | <=) <value>"
                 + "\nand can be combined with && or ||");
+    }
+
+    private static <T> void printTop(SortOption sortOption, ArrayList<T> sorted) {
+        if (sortOption.getSortType() == SortType.DESCENDING) {
+            int minIndex = sorted.size() - 1 - sortOption.getTop();
+            minIndex = minIndex < -1 ? 0 : minIndex;
+            for (int i = sorted.size() - 1; i > minIndex; i--) {
+                logPlacing(i + 1, sorted.get(i));
+            }
+        } else {
+            for (int i = 0; i < sortOption.getTop(); i++) {
+                if (sorted.size() > i) {
+                    logPlacing(i + 1, sorted.get(i));
+                }
+            }
+        }
     }
 
     private static void logPlacing(int number, Object object) {
