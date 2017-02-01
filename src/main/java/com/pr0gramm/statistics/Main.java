@@ -90,6 +90,7 @@ public class Main {
 
                 if (splitted.length < 1) {
                     warnUsage();
+                    executingCommandRightNow = false;
                     continue;
                 }
 
@@ -97,6 +98,7 @@ public class Main {
                 case "readitems":
                     if (splitted.length != 2) {
                         warnUsage();
+                        executingCommandRightNow = false;
                         continue;
                     }
                     readItems(splitted[1]);
@@ -106,6 +108,7 @@ public class Main {
                 case "readusers":
                     if (splitted.length != 2) {
                         warnUsage();
+                        executingCommandRightNow = false;
                         continue;
                     }
                     readUsers(splitted[1]);
@@ -115,6 +118,7 @@ public class Main {
                 case "downloaditems":
                     if (splitted.length != 2) {
                         warnUsage();
+                        executingCommandRightNow = false;
                         continue;
                     }
                     if ((new File(splitted[1]).exists())) {
@@ -133,6 +137,7 @@ public class Main {
                 case "downloadusers":
                     if (splitted.length != 2) {
                         warnUsage();
+                        executingCommandRightNow = false;
                         continue;
                     }
                     if ((new File(splitted[1]).exists())) {
@@ -157,6 +162,7 @@ public class Main {
                 case "stats":
                     if (splitted.length < 3) {
                         warnUsage();
+                        executingCommandRightNow = false;
                         continue;
                     }
 

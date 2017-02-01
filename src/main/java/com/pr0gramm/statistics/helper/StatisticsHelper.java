@@ -70,17 +70,11 @@ public class StatisticsHelper {
                 + "or 'downloadusers <outputPath>' to download all users!");
             return;
         }
-        // Default field is user.id for users
-        for (int i = 0; i < predicate.length; i++) {
-            String fieldKey = "--sort_field=";
-            if (predicate[i].startsWith(fieldKey)) {
-                String fieldName = predicate[i].replace(fieldKey, "");
-                if (fieldName.equals("id")) {
-                    predicate[i] = fieldKey + "user.id";
-                }
-            }
-        }
         SortOption sortOption = filterPredicates(predicate);
+        // Default field is user.id for users
+        if (sortOption.getField().equals("id")) {
+            sortOption.setField("user.id");
+        }
 
         ArrayList<GeneralPredicate<User>> userPredicates = generatePredicates(sortOption.getPredicate(), User.class);
         if (userPredicates == null) {
